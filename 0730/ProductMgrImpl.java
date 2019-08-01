@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.ssafy.model.dto.CodeNotFindException;
 import com.ssafy.model.dto.DuplicateException;
 import com.ssafy.model.dto.Product;
 import com.ssafy.model.dto.ProductNotFoundException;
@@ -20,8 +21,9 @@ public class ProductMgrImpl implements IProductMgr{
 	
 	public ProductMgrImpl() {
 		prds = new LinkedList<Product>();
-		
+		load();
 	}
+	
 	public void load() {
 		FileInputStream fis = null;
 		ObjectInputStream ois = null;
@@ -29,7 +31,7 @@ public class ProductMgrImpl implements IProductMgr{
 		try {
 			file = new File(fileName);
 			if (file.exists() && file.canRead()) {
-				fis = new FileInputStream(file);
+				fis = new FileInputStream(file);	
 				ois = new ObjectInputStream(fis);
 				prds = (List) ois.readObject();		
 			}
@@ -40,13 +42,13 @@ public class ProductMgrImpl implements IProductMgr{
 			if(fis!=null)try {fis.close();} catch (Exception e2){}
 		}
 	}
-	private void save() {
+	public void save() {
 		FileOutputStream fos = null;
 		ObjectOutputStream oos = null;
 		try {
 			fos = new FileOutputStream(fileName);
 			oos = new ObjectOutputStream(fos);
-			oos.writeObject(emps);
+			oos.writeObject(prds);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -72,14 +74,13 @@ public class ProductMgrImpl implements IProductMgr{
 		if (prd != null) {
 			int p_no = prd.getP_no();
 			int index = findIndex(p_no);
-			if (index>-1) {
+			if (index<-1) {
 				try {
 					String msg = String.format("%s 제품번호는 이미 등록된 번호입니다.", prd);
 					throw new DuplicateException(msg);
 				}catch (DuplicateException e){
 					e.printStackTrace();
 				}
-				
 			}else {
 				prds.add(prd);
 			}
@@ -90,15 +91,20 @@ public class ProductMgrImpl implements IProductMgr{
 		return prds;
 	}
 	
-	public Product findProduct(int p_no) {
+	public Product findProduct(int p_no) throws CodeNotFindException {
 		int index = findIndex(p_no);
 		if (index>-1) {
-			try {
-				
-			}
 			return prds.get(index);
 		}else {
-			return null;
+			try {
+				String msg = String.format("상품번호 %d는 존재하지 않는 상품번호입니다.", p_no);
+				throw new CodeNotFindException(msg);
+			} catch (CodeNotFindException e) {
+				e.printStackTrace();
+			}finally {
+				return null;
+			}
+			
 		}
 	}
 	
@@ -145,7 +151,13 @@ public class ProductMgrImpl implements IProductMgr{
 			}
 		}
 		if (rlist.size()==0) {
-			throw new ProductNotFoundException();
+			try {
+				throw new ProductNotFoundException();
+			} catch (ProductNotFoundException e) {
+				e.printStackTrace();
+			}finally {
+				return null;
+			}
 		}else {
 			return rlist;
 		}
@@ -161,7 +173,13 @@ public class ProductMgrImpl implements IProductMgr{
 			}
 		}
 		if (tlist.size()==0) {
-			throw new ProductNotFoundException();
+			try {
+				throw new ProductNotFoundException();
+			} catch (ProductNotFoundException e) {
+				e.printStackTrace();
+			}finally {
+				return null;
+			}
 		}else {
 			return tlist;
 		}
@@ -196,6 +214,7 @@ public class ProductMgrImpl implements IProductMgr{
 	}
 	public void close() {
 		System.exit(0);	//JVM종료
+		save();
 	}
 
 }
